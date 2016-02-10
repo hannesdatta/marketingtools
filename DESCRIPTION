@@ -1,0 +1,9 @@
+Package: marketingtools
+Type: Package
+Title: Marketingtools: A first attempt for re-usable code
+Version: 0.0.1 
+Date: 2016-01-26
+Author: Hannes Datta
+Maintainer: Hannes Datta, Tilburg University <h.datta@tilburguniversity.nl>
+Description: A toolbox with frequently used code in the applied econometrics / marketing literature
+License: GPL (>= 2)
