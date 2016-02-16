@@ -4,16 +4,16 @@ require(Formula)
 
 # Formula: y ~ homogenous | heterogenous | index (brand first, then time)
 
-attraction_data <- function(formula, data, subset, model = 'MCI', benchmark = NULL) {
+attraction_data <- function(formula, data, model = 'MCI', benchmark = NULL) { #subset
 	# converts a data set to its corresponding attraction-based data (using the base-brand approach), see Fok 2001.
 	# index: first column is individual, second is time
 	
-	f <- Formula(formula)
-	mf <- model.frame(f, data=data, subset=subset)
+	f <- Formula::Formula(formula)
+	mf <- model.frame(f, data=data)#, subset=subset)
 	y <- model.response(mf)
-	xhom <- model.part(f, mf, rhs=1)
-	xhet <- model.part(f, mf, rhs=2)
-	index <- model.part(f, mf, rhs=3)
+	xhom <- Formula::model.part(f, mf, rhs=1)
+	xhet <- Formula::model.part(f, mf, rhs=2)
+	index <- Formula::model.part(f, mf, rhs=3)
 	
 	if (!ncol(index)==2) stop("Definition of index (1: e.g., brand, 2: time period) is required")
 
@@ -24,7 +24,7 @@ attraction_data <- function(formula, data, subset, model = 'MCI', benchmark = NU
 	Hbb = cbind(Hbb, -1)
 
 	# Transformed X and Y matrices
-	dtmelt <- melt(data.frame(y=y, xhom, xhet, individ=index[,1], period=index[,2]), id.vars=c('individ', 'period'))
+	dtmelt <- reshape2::melt(data.frame(y=y, xhom, xhet, individ=index[,1], period=index[,2]), id.vars=c('individ', 'period'))
 	
 	# select benchmark brand: the one with most available observations (mean of all variables)
 	tmp <- table(dtmelt[which(dtmelt$variable=='y' & !is.na(dtmelt$value)), c('individ')])
@@ -35,15 +35,14 @@ attraction_data <- function(formula, data, subset, model = 'MCI', benchmark = NU
 	aindivid = names(tmp)[!names(tmp)==bindivid]
 	
 	# stacked data set
-	dtcast = rbindlist(lapply(aindivid, function(x) {
-		tmp=dcast(dtmelt[dtmelt$individ%in%c(x, bindivid),], period ~ individ + variable)
+	dtcast = data.table::rbindlist(lapply(aindivid, function(x) {
+		tmp=reshape2::dcast(dtmelt[dtmelt$individ%in%c(x, bindivid),], period ~ individ + variable)
 		# kick out variables which are unavailable throughout the whole period
 		tmp=tmp[,!colSums(is.na(tmp))==nrow(tmp)]
 		tmp[complete.cases(tmp),]
 		}), fill=TRUE)
-	
-	
-	iindex = aindivid[apply(dtcast[, mget(paste0(aindivid,'_y'))],1, function(x) which(!is.na(x)))]
+
+	iindex = aindivid[apply(dtcast[, paste0(aindivid,'_y'),with=F],1, function(x) which(!is.na(x)))]
 	
 	# apply transformations
 		if (model=='MCI') tfkt <- function(x) log(x)

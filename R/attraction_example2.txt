@@ -2,6 +2,7 @@
 #source('itersur.R')
 #source('attraction_data.R')
 
+require(marketingtools)
 
 # Simulate data
 	rawdata <- do.call('cbind', attraction_simulate_data())

@@ -35,7 +35,7 @@ attraction_simulate_data <- function() {
 	y <- double(tobs*n_brands)
 
 	for (p in 1:tobs) { # time periods
-		nu = mvrnorm(n=1, mu=rep(0, ncol(sigma_tilde)), Sigma = sigma_tilde)
+		nu = MASS::mvrnorm(n=1, mu=rep(0, ncol(sigma_tilde)), Sigma = sigma_tilde)
 		
 		index = seq(from=p*n_brands-(n_brands-1), length.out=n_brands)
 		
