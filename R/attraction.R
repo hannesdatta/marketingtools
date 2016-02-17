@@ -2,21 +2,46 @@ require(data.table)
 require(reshape2)	
 require(Formula)	
 
-# Formula: y ~ homogenous | heterogenous | index (brand first, then time)
 
-attraction_data <- function(formula, data, model = 'MCI', benchmark = NULL) { #subset
+attraction_data <- function(formula, data = NULL, subset=NULL, heterogenous=NULL, index = NULL, model = 'MCI', benchmark = NULL, ...) { #subset
 	# converts a data set to its corresponding attraction-based data (using the base-brand approach), see Fok 2001.
 	# index: first column is individual, second is time
-	
-	f <- Formula::Formula(formula)
-	mf <- model.frame(f, data=data)#, subset=subset)
-	y <- model.response(mf)
-	xhom <- Formula::model.part(f, mf, rhs=1)
-	xhet <- Formula::model.part(f, mf, rhs=2)
-	index <- Formula::model.part(f, mf, rhs=3)
-	
-	if (!ncol(index)==2) stop("Definition of index (1: e.g., brand, 2: time period) is required")
 
+	# Retrieve all variables
+		
+		cl <- match.call()
+		mf <- match.call(expand.dots = FALSE)
+		m <- match(c("formula", "data"), names(mf), 0L)
+		
+		mf <- mf[c(1L, m)]
+		mf$drop.unused.levels <- TRUE
+		mf[[1L]] <- quote(stats::model.frame)
+		
+		xhom <- eval(mf, parent.frame())[,-1]
+		y <- eval(mf, parent.frame())[,1]
+		
+	# Identify heterogenous variables, if any
+		mf2 <- match.call(expand.dots = FALSE)
+		m <- match(c("data", "subset"), names(mf2), 0L)
+		mf2 <- mf2[c(1L, m)]
+		mf2$drop.unused.levels <- TRUE
+		mf2$formula = heterogenous
+		mf2[[1L]] <- quote(stats::model.frame)
+		xhet <- eval(mf2, parent.frame())
+		
+		xhom <- xhom[,!colnames(xhom)%in%colnames(xhet)]
+		
+	# Identify index (first: date, second: brand)
+		mf3 <- match.call(expand.dots = FALSE)
+		m <- match(c("data", "subset"), names(mf3), 0L)
+		mf3 <- mf3[c(1L, m)]
+		mf3$drop.unused.levels <- TRUE
+		mf3$formula = index
+		mf3[[1L]] <- quote(stats::model.frame)
+		index <- eval(mf3, parent.frame())
+
+		if (!ncol(index)==2) stop("Please provide an index: brands (column 1), time (column 2)")
+	
 	n_individ = length(unique(index[,1]))
 	
 	# create conversion matrix for base-brand approach
