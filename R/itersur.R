@@ -4,7 +4,7 @@
 library(Matrix)
 library(MASS)
 
-itersur <- function (X, Y, index, maxiter = 1000) {
+itersur <- function (X, Y, index, maxiter = 1000, method = "FGLS") {
 
 		# verify correct data classes
 		if (!class(X)=='matrix'|!class(Y)=='matrix') stop('X and Y need to be matrices')
@@ -27,16 +27,51 @@ itersur <- function (X, Y, index, maxiter = 1000) {
 		# initialize variance-covariance matrix
 			empty_sigma <- sigma <- matrix(double(length(obsperbrand)^2), ncol = length(obsperbrand))
 		
+		# initialize x/y's-by-brand to ease computation for Praise-Winsten transformation
+			xsplit = split(data.frame(as.matrix(X)), index[,2])
+			ysplit = split(as.matrix(Y), index[,2])
+			
+			xprime = X
+			yprime = Y
+			
 		# iterate through SUR
 		for (i in 1:maxiter) {
 			beta_old = beta_hat
 			
-			pred = X %*% beta_hat
-			resid = Y - pred
+			if (method=="FGLS-Praise-Winsten") {
+				# Apply praise-winston correction for auto-correlation (see van Heerde, Leeflang, and Wittink, MktSci 2004, Greene 2003, section 20.9 (AR(1) disturbances)
+				
+				pred = X %*% beta_hat
+				resid = Y - pred
+				
+				resid_by_brand = dcast(data.frame(index, resid = matrix(resid)), date ~ brand, value.var = "resid")
+				rho_brand = apply(resid_by_brand[,-1], 2, function(x) sum(x[-1]*x[-length(x)])/sum(x^2))
+						
+				# apply transformation
+				praise_winsten <- function(x,rho) {
+					res=double(length(x))
+					xtrans = x[-1]
+					xlag = x[-length(x)]
+					
+					res[1] = sqrt(1-rho^2)*x[1]
+					res[-1] = xtrans-rho*xlag
+					
+					return(res)					
+					}
+				
+				yprime = matrix(mapply(praise_winsten, ysplit, as.list(rho_brand)),ncol=1)
+				xprime = do.call('rbind', mapply(function(x,rho) apply(x, 2, praise_winsten, rho=rho), xsplit, as.list(rho_brand), SIMPLIFY =FALSE))
+				xprime=as(xprime, "dgeMatrix")
+				}
+			
+			pred = xprime %*% beta_hat
+			resid = yprime - pred
 			
 			resid_by_brand = dcast(data.frame(index, resid = matrix(resid)), 
 				date ~ brand, value.var = "resid")
 			
+			rhos = apply(resid_by_brand[,-1], 2, function(x) sum(x[-1]*x[-length(x)])/sum(x^2))
+				
 			sigma <- empty_sigma
 			
 			for (.i in 1:ncol(sigma)) {
@@ -78,18 +113,18 @@ itersur <- function (X, Y, index, maxiter = 1000) {
 			# new way to compute Kronecker of unequal observations, much faster
 			omega_inverse = kronecker(sigma_inv,I, make.dimnames = FALSE)[takeouts,takeouts]
 			
-			varcovar = solve(crossprod(X, omega_inverse) %*% X) #solve #ginv(as.matrix(crossprod(X, omega_inverse) %*% X)) #solve
+			varcovar = solve(crossprod(xprime, omega_inverse) %*% xprime) #solve #ginv(as.matrix(crossprod(X, omega_inverse) %*% X)) #solve
 	
-			beta_hat = varcovar %*% (crossprod(X, omega_inverse) %*% Y)
+			beta_hat = varcovar %*% (crossprod(xprime, omega_inverse) %*% yprime)
 			
 			# check convergence, based on criterium in Greene (2002), p. 566
-			delta = drop(t(beta_hat - beta_old) %*% (t(X)%*%omega_inverse%*%X) %*% (beta_hat - beta_old)) # the middle part belongs to the Hessian
+			delta = drop(t(beta_hat - beta_old) %*% (t(xprime)%*%omega_inverse%*%xprime) %*% (beta_hat - beta_old)) # the middle part belongs to the Hessian
 			if (delta<10^-7) break
 		}
 		
 	res = new("itersur")
 	
-	varcovar = solve(t(X)%*%omega_inverse%*%X)
+	varcovar = solve(t(xprime)%*%omega_inverse%*%xprime)
 	ses = sqrt(diag(varcovar))
 
 	res@coefficients = data.frame(variable = colnames(X), coef = drop(as.matrix(beta_hat)), se = drop(as.matrix(ses)), ols = drop(as.matrix(beta_ols)), row.names=NULL)
@@ -98,14 +133,19 @@ itersur <- function (X, Y, index, maxiter = 1000) {
     k = ncol(varcovar)
     N = length(resid)
     res@bic = log(sum(resid^2)/N) + (k * log(N))/N
-    res@predicted = as.numeric(X %*% beta_hat)
-    res@resid = as.numeric(Y - X %*% beta_hat)
-    res@X <- as.matrix(X)
-    res@y <- as.numeric(Y)
+    res@predicted = as.numeric(xprime %*% beta_hat)  # check with harald reg. computatoin of X, Y, etc.
+    res@resid = as.numeric(yprime - xprime %*% beta_hat)  # check with harald reg. computatoin of X, Y, etc.
+	res@varcovar = as.matrix(varcovar)
+    res@X <- as.matrix(xprime)
+    res@y <- as.numeric(yprime)
     res@index <- index
 	res@sigma <- as.matrix(sigma)
 	res@iterations = i
+	res@method=method
+	res@rho = rhos
     return(res)
+	
+	# check with harald reg. computatoin of X, Y, etc.
 	}
 
 
@@ -119,30 +159,35 @@ setClass("itersur",
 				   bic = "numeric",
 				   predicted = "numeric",
 				   resid = "numeric",
-				   coefficients = "data.frame"
+				   varcovar = "matrix",
+				   coefficients = "data.frame",
+				   method="character",
+				   rho="numeric"
 				   ))
 
-
-
 setMethod("show", "itersur", function(object) {
-			cat('FGLS SUR Estimation\n')
+			options(scipen=999)
+			cat('itersur() Estimation (FGLS) \n')
 			cat('=============================\n\n')
 			
-			cat('FGLS Iterations: ', object@iterations,'\n')
-			cat('BIC: ', object@bic, '\n')
+			cat('Estimation method              : ', object@method,'\n')
+			cat('Iterations                     : ', object@iterations,'\n')
+			cat('BIC:                           : ', object@bic, '\n')
 			
 			cat('\nParameter Estimates:\n')
-			options(scipen=999)
 			print(object@coefficients,digits=3)
 			cat('\n')
 			
+			cat('\nCross-sectional variance-covariance matrix:\n')
+			print(object@sigma,digits=3)
+			cat('\n')
+
+			cat('\nAuto-correlation of the residuals:\n')
+			print(object@rho,digits=3)
+			cat('\n')
 			})
 	
 setMethod("coef", "itersur", function(object) {
 			return(object@coefficients)
 			
 			})
-
-	#cat('\n\nElasticities:\n')
-	#options(scipen=999)
-	#print(data.frame(out$elasticities[, c('brand_name', 'var_name', 'elast', 'elast_se', 'z'),with=F]),digits=3)

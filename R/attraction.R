@@ -3,43 +3,17 @@ require(reshape2)
 require(Formula)	
 
 
-attraction_data <- function(formula, data = NULL, subset=NULL, heterogenous=NULL, index = NULL, model = 'MCI', benchmark = NULL, ...) { #subset
+attraction_data <- function(formula, data = NULL, heterogenous=NULL, index = NULL, model = 'MCI', benchmark = NULL, ...) { #subset
 	# converts a data set to its corresponding attraction-based data (using the base-brand approach), see Fok 2001.
 	# index: first column is individual, second is time
 
 	# Retrieve all variables
-		
-		cl <- match.call()
-		mf <- match.call(expand.dots = FALSE)
-		m <- match(c("formula", "data"), names(mf), 0L)
-		
-		mf <- mf[c(1L, m)]
-		mf$drop.unused.levels <- TRUE
-		mf[[1L]] <- quote(stats::model.frame)
-		
-		xhom <- eval(mf, parent.frame())[,-1]
-		y <- eval(mf, parent.frame())[,1]
-		
-	# Identify heterogenous variables, if any
-		mf2 <- match.call(expand.dots = FALSE)
-		m <- match(c("data", "subset"), names(mf2), 0L)
-		mf2 <- mf2[c(1L, m)]
-		mf2$drop.unused.levels <- TRUE
-		mf2$formula = heterogenous
-		mf2[[1L]] <- quote(stats::model.frame)
-		xhet <- eval(mf2, parent.frame())
-		
+		xhom = stats::model.frame(formula=formula, data=data,na.action=NULL)[,-1]
+		y = stats::model.frame(formula=formula, data=data,na.action=NULL)[,1]
+		xhet = stats::model.frame(formula=heterogenous, data=data,na.action=NULL)
 		xhom <- xhom[,!colnames(xhom)%in%colnames(xhet)]
+		index = stats::model.frame(formula=index, data=data,na.action=NULL)
 		
-	# Identify index (first: date, second: brand)
-		mf3 <- match.call(expand.dots = FALSE)
-		m <- match(c("data", "subset"), names(mf3), 0L)
-		mf3 <- mf3[c(1L, m)]
-		mf3$drop.unused.levels <- TRUE
-		mf3$formula = index
-		mf3[[1L]] <- quote(stats::model.frame)
-		index <- eval(mf3, parent.frame())
-
 		if (!ncol(index)==2) stop("Please provide an index: brands (column 1), time (column 2)")
 	
 	n_individ = length(unique(index[,1]))
