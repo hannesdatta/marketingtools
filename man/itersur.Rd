@@ -8,13 +8,13 @@
 
 }
 \usage{
-itersur(X, Y, index, model="FGLS", maxiter=1000)
+itersur(X, Y, index, method="FGLS", maxiter=1000)
 }
 \arguments{
   \item{X}{matrix of explanatory variables, possibly constructed using \code{attraction_data}.}
   \item{Y}{vector of dependent variable, possibly constructed using \code{attraction_data}.}
   \item{index}{\code{data.frame} with two columns, describing the index of the data set. The first column needs to list an indicator for time (e.g., weeks); the second column lists an indicator for cross-sectional units (e.g., factor, character, or numeric). The columns need not be named. Index can be constructed using \code{attraction_data}.}
-  \item{model}{Choice of \code{"FGLS"} (for feasible generalized least squares), or \code{"FGLS-Praise-Winsten"} for feasible generalized least squares with Praise-Winsten transformation of the dependent and explanatory variables (to correct for autocorrelation in the residuals) (see van Heerde, Leeflang, and Wittink 2004; Greene 2003.}
+  \item{method}{Choice of \code{"FGLS"} (for feasible generalized least squares), or \code{"FGLS-Praise-Winsten"} for feasible generalized least squares with Praise-Winsten transformation of the dependent and explanatory variables (to correct for autocorrelation in the residuals) (see van Heerde, Leeflang, and Wittink 2004; Greene 2003.}
   \item{maxiter}{Maximum number of FGLS iterations (set to 1000 by default)}
   }
 \value{
@@ -34,7 +34,9 @@ An object of class \code{"itersur"} is an S4-class containing at least the follo
   \item{resid}{the residuals, that is response minus fitted values.}
   \item{varcovar}{The variance-covariance matrix of the estimates.}
   \item{method}{The method used to estimat the model; one of code{"FGLS"} or \code{"FGLS-Praise-Winsten"}.}
-  \item{rho}{A numeric vector, indicating the auto-correlation of residuals for all cross-sectional units.}
+  \item{rho_hat}{A numeric vector, indicating the estimated auto-correlation using method \code{"FGLS-Praise-Winsten"}. Zero if method \code{"FGLS"} is used.}
+  \item{rho}{A numeric vector, indicating the (possibly remaining) auto-correlation in the residuals, by cross-sectional unit.}
+  
 
 }
 \references{
@@ -48,6 +50,6 @@ An object of class \code{"itersur"} is an S4-class containing at least the follo
 }
 
 \examples{
-See examples listed under \link{attraction_data}.
+# See examples listed under attraction_data.
 
 }

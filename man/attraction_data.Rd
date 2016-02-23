@@ -21,6 +21,8 @@ attraction_data(formula, data = NULL, subset = NULL, heterogenous = NULL, index 
   
   \item{model}{specifies the transformation type that will be applied to the data. Can be one of \code{"MCI"} (standard) or \code{"MNL".}. For details, see Fok 2001.}
 
+  \item{benchmark}{character vector, specifying the benchmark brand to be chosen for normalization; default of \code{NULL} implies that the algorithm automatically determines the benchmark brand (chosing the brand with most available observations for all variables and all time periods).
+  }
   \item{subset}{an optional expression indicating the subset of the rows
     of \code{data} that should be used in the fit. This can be a logical
     vector, or a numeric vector indicating which observation numbers are

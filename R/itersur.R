@@ -4,8 +4,8 @@
 library(Matrix)
 library(MASS)
 
-itersur <- function (X, Y, index, maxiter = 1000, method = "FGLS") {
-
+itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000) {
+		if (!method%in%c('FGLS', 'FGLS-Praise-Winsten')) stop(paste('Invalid method selected: ',method))
 		# verify correct data classes
 		if (!class(X)=='matrix'|!class(Y)=='matrix') stop('X and Y need to be matrices')
 		
@@ -45,7 +45,7 @@ itersur <- function (X, Y, index, maxiter = 1000, method = "FGLS") {
 				resid = Y - pred
 				
 				resid_by_brand = dcast(data.frame(index, resid = matrix(resid)), date ~ brand, value.var = "resid")
-				rho_brand = apply(resid_by_brand[,-1], 2, function(x) sum(x[-1]*x[-length(x)])/sum(x^2))
+				rho_brand = apply(resid_by_brand[,-1], 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
 						
 				# apply transformation
 				praise_winsten <- function(x,rho) {
@@ -59,7 +59,7 @@ itersur <- function (X, Y, index, maxiter = 1000, method = "FGLS") {
 					return(res)					
 					}
 				
-				yprime = matrix(mapply(praise_winsten, ysplit, as.list(rho_brand)),ncol=1)
+				yprime = matrix(unlist(mapply(praise_winsten, ysplit, as.list(rho_brand),SIMPLIFY=FALSE)),ncol=1)
 				xprime = do.call('rbind', mapply(function(x,rho) apply(x, 2, praise_winsten, rho=rho), xsplit, as.list(rho_brand), SIMPLIFY =FALSE))
 				xprime=as(xprime, "dgeMatrix")
 				}
@@ -70,7 +70,7 @@ itersur <- function (X, Y, index, maxiter = 1000, method = "FGLS") {
 			resid_by_brand = dcast(data.frame(index, resid = matrix(resid)), 
 				date ~ brand, value.var = "resid")
 			
-			rhos = apply(resid_by_brand[,-1], 2, function(x) sum(x[-1]*x[-length(x)])/sum(x^2))
+			rhos = apply(resid_by_brand[,-1], 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
 				
 			sigma <- empty_sigma
 			
@@ -94,7 +94,7 @@ itersur <- function (X, Y, index, maxiter = 1000, method = "FGLS") {
 			sigma_inv = solve(sigma)
 			#sigma = (1/tobs) * crossprod(as.matrix(resid_by_brand[,-1]))
 			
-			# old way
+			# old way, really slow
 			if(0){
 			inew = NULL
 			for (.i in 1:ncol(sigma_inv)) {
@@ -143,6 +143,7 @@ itersur <- function (X, Y, index, maxiter = 1000, method = "FGLS") {
 	res@iterations = i
 	res@method=method
 	res@rho = rhos
+	if(method=='FGLS-Praise-Winsten') res@rho_hat = rho_brand else res@rho_hat = rep(0, length(obsperbrand))
     return(res)
 	
 	# check with harald reg. computatoin of X, Y, etc.
@@ -162,7 +163,8 @@ setClass("itersur",
 				   varcovar = "matrix",
 				   coefficients = "data.frame",
 				   method="character",
-				   rho="numeric"
+				   rho="numeric",
+				   rho_hat="numeric"
 				   ))
 
 setMethod("show", "itersur", function(object) {
@@ -182,8 +184,12 @@ setMethod("show", "itersur", function(object) {
 			print(object@sigma,digits=3)
 			cat('\n')
 
-			cat('\nAuto-correlation of the residuals:\n')
+			cat('\nEstimated auto-correlation of the residuals, if available:\n')
+			print(object@rho_hat,digits=3)
+			
+			cat('\nRemaining auto-correlation of the residuals:\n')
 			print(object@rho,digits=3)
+
 			cat('\n')
 			})
 	
