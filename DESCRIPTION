@@ -7,5 +7,5 @@ Author: Hannes Datta
 Maintainer: Hannes Datta, Tilburg University <h.datta@tilburguniversity.nl>
 Description: A toolbox with frequently used code in the applied econometrics / marketing literature
 License: GPL (>= 2)
-Depends: data.table, reshape2, MASS, Matrix
-Imports: data.table, reshape2, MASS, Matrix
+Depends: data.table, reshape2, MASS, Matrix, fUnitRoots, compiler
+Imports: data.table, reshape2, MASS, Matrix, fUnitRoots, compiler
