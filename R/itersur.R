@@ -144,8 +144,9 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000) {
     
 	k = ncol(varcovar)
     N = length(resid)
-    res@bic = log(sum(resid^2)/N) + (k * log(N))/N
-	res@aic = log(sum(resid^2)/N) + (2*k)/N
+    res@bic = N * log(sum(resid^2)/N) + (k * log(N))
+	res@llik = -.5 * N * log(sum(resid^2)/N)
+	res@aic = 2*k - 2*res@llik
 	
     res@predicted = as.numeric(pred)  # check with harald reg. computatoin of X, Y, etc.
     res@resid = as.numeric(resid)  # check with harald reg. computatoin of X, Y, etc.
@@ -175,6 +176,7 @@ setClass("itersur",
 				   delta = "numeric",
 				   bic = "numeric",
 				   aic = "numeric",
+				   llik = "numeric",
 				   predicted = "numeric",
 				   resid = "numeric",
 				   varcovar = "matrix",

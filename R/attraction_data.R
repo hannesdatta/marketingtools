@@ -96,8 +96,9 @@ attraction_data <- function(formula, data = NULL, heterogenous=NULL, index = NUL
 	
 	out = new("attr.data")
 	# remove homogenous (pre-transformation columns) from dttrans
-	
-	out@X <- as.matrix(cbind(dttrans[, !grep('hom_y|period', colnames(dttrans),value=T),with=F], dummies))
+	xmatrix = as.matrix(cbind(dttrans[, !grep('hom_y|period', colnames(dttrans),value=T),with=F], dummies))
+	#rownames(xmatrix) <- rep(aindivid, 
+	out@X <- xmatrix	
 	out@y <- as.numeric(dttrans$hom_y)
 	out@period <- as.numeric(dttrans$period)
 	out@individ <- iindex
