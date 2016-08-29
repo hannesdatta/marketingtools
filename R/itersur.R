@@ -20,7 +20,7 @@ require(compiler)
 praise_winsten <- cmpfun(praise_winsten)
 
 
-itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000) {
+itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7) {
 
 		if (!method%in%c('FGLS', 'FGLS-Praise-Winsten')) stop(paste('Invalid method selected: ',method))
 		# verify correct data classes
@@ -129,7 +129,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000) {
 			delta = drop(t(beta_hat - beta_old) %*% inv_varcovar %*% (beta_hat - beta_old)) # the middle part belongs to the Hessian
 			cat('Iteration ', iter, ' (Convergence Criteria: ', delta, ').\n')
 			deltas = c(deltas, delta)
-			if (delta<10^-7) break
+			if (delta<reltol) break
 		}
 	
 	res = new("itersur")
