@@ -59,7 +59,7 @@ attraction_data <- function(formula, data = NULL, heterogenous=NULL, index = NUL
 	dttrans <- dtcast
 	
 	# transformation for heterogenous parameters
-	for (.var in grep(paste(colnames(xhet),collapse='|'), colnames(dtcast),value=T)) {
+	for (.var in grep(paste(paste0('[_]', colnames(xhet)),collapse='|'), colnames(dtcast),value=T)) {
 		if (grepl(paste0('^',bindivid),.var)) {
 			# variable pertaining to base brand
 			dttrans[, .var:= -tfkt(get(.var)),with=F]
