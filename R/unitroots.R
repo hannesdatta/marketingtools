@@ -20,8 +20,9 @@ library(data.table) # to use the shift function
 		c(rep(NA,lags),x)[1:length(x)]
 		}
 
-# Function to conduct UR tests concurrently for up to maxlag lags
-# ADF test equation
+		
+# Function to conduct UR tests concurrently for up to maxlag lags using the ADF test equation with a constant and (optional) trend
+
 adf.test <- function(X, maxlag = 12, trend = TRUE, season = NULL) {
 	#maxlag = 12 # number of maximum lags when determining "common" size of test (to make sure BICs are computed even for 1 lag for data in which lags 12 are used)
 	#lags = 1:12 # lags to be tested
@@ -42,9 +43,11 @@ adf.test <- function(X, maxlag = 12, trend = TRUE, season = NULL) {
 	first_nonna = non_na[1]
 	last_nonna = rev(non_na)[1]
 
+	actual_maxlag = pmin(maxlag, last_nonna - first_nonna - 1)
+	
 	# Determine observations to estimate models on (i.e., all lags definining max lag are taken out)
-	subs = seq(from = first_nonna + maxlag + 1, to = last_nonna)
-
+	subs = seq(from = first_nonna + actual_maxlag + 1, to = last_nonna)
+		
 	# Add linear trend, if necessary
 	lintrend = NULL
 	if (trend==T) lintrend = subs-min(subs)+1
@@ -52,9 +55,9 @@ adf.test <- function(X, maxlag = 12, trend = TRUE, season = NULL) {
 	# Run up to 0 to maxlag regressions, and save bic to determine selected lag length
 	y = z_diff[subs]
 	n = length(y)
-
-	bics = sapply(0:maxlag, function(lags) {
-		.seq=seq(to=ncol(lag_matrix)-(maxlag-lags), length.out=lags)
+	
+	bics = sapply(0:actual_maxlag, function(lags) {
+		.seq=seq(to=ncol(lag_matrix)-(actual_maxlag-lags), length.out=lags)
 		df = as.matrix(cbind(lag1 = z_lag_1[subs], intercept=1, lintrend = lintrend, lag_matrix[subs, .seq]))
 		XprimeXinv = solve(t(df)%*%df)
 		beta=XprimeXinv%*%(t(df)%*%y)
@@ -165,9 +168,13 @@ if(0){
 	adf_enders_single <- function(X, maxlag, season, pval) {
 		eq1=adf.test(X, maxlag=maxlag, trend=T, season=season)
 		
+		names(eq1$t) <- NULL
+		names(eq1$p) <- NULL
+			
 		# Procedure described in Elder and Kennedy: Testing for Unit Roots: What Students Should be Taught?
-		if (eq1$p<=pval) {  
+		if (eq1$p<=pval) {
 			# --> rejection of test: no unit root; but: test for trend
+			
 			
 			# next: test for significance of trend
 			if (eq1$trend_p<=pval) {
@@ -178,7 +185,6 @@ if(0){
 				res = list(trend=0, ur = 0, order = 0,n=eq1$n, t=eq1$t,  p=eq1$p, lags = eq1$lags)
 				}
 			} else {
-			
 			# --> not reject: unit root, but NO deterministic trend (check for higher orders!)
 			res = list(trend=0, ur = 1, order = 1, n=eq1$n, t=eq1$t, p=eq1$p, lags = eq1$lags)
 			}
@@ -213,7 +219,7 @@ adf_enders <- function(X, ...) {
 		
 	}
 
-	adf.test(X)
+#	adf.test(X)
 
 
 # Test:
