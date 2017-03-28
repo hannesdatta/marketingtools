@@ -30,8 +30,8 @@ adf.test <- function(X, maxlag = 12, trend = TRUE, season = NULL) {
 	##season is not activated
 	if (!is.null(season)) stop('Seasonality not supported yet')
 	
-	# divide X by its maximum to ensure that the regression below (solve(t(df)%*%df)) does not run into conversion problems
-	X <- X/max(X,na.rm=T)
+	# divide X by its absolute maximum to ensure that the regression below (solve(t(df)%*%df)) does not run into conversion problems
+	X <- X/max(abs(X),na.rm=T)
 	
 	# Create variables for ADF test equation:
 	# delta_Y_t = alpha + beta*trend + gamma*y_t-1 + d_1 * delta_y_t-1 + d_2 * delta_y_t-2, etc.
