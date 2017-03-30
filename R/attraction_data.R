@@ -89,9 +89,14 @@ attraction_data <- function(formula, data = NULL, heterogenous=NULL, index = NUL
 		dttrans[, c(paste0(bindivid, '_', .var),paste0(aindivid, '_', .var)):=NULL, with=F]
 		}
 
-	dummies = as.matrix(model.matrix( ~ as.factor(iindex) - 1))
-	colnames(dummies)<-paste0(aindivid,'_dum')
+	if (length(unique(iindex))>1) {
+		dummies = as.matrix(model.matrix( ~ as.factor(iindex) - 1))
+		} else {
+		dummies = as.matrix(rep(1, length(iindex)), ncol=1)
+		}
 	
+	colnames(dummies)<-paste0(aindivid,'_dum')
+		
 	dttrans[is.na(dttrans)]<-0
 	
 	out = new("attr.data")
