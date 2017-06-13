@@ -6,20 +6,21 @@ library(MASS)
 require(compiler)
 		
 # transformation function for praise-winston auto-correlation correction
-		praise_winsten <- function(x,rho) {
-			res=double(length(x))
-			xtrans = x[-1]
-			xlag = x[-length(x)]
-			
-			res[1] = sqrt(1-rho^2)*x[1]
-			res[-1] = xtrans-rho*xlag
-			
-			return(res)					
-			}
-			
-praise_winsten <- cmpfun(praise_winsten)
+	praise_winsten <- function(x,rho) {
+		res=double(length(x))
+		xtrans = x[-1]
+		xlag = x[-length(x)]
+		
+		res[1] = sqrt(1-rho^2)*x[1]
+		res[-1] = xtrans-rho*xlag
+		
+		return(res)					
+		}
+	
+	# compile function
+	praise_winsten <- cmpfun(praise_winsten)
 
-
+# iterative SUR
 itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7) {
 
 		if (!method%in%c('FGLS', 'FGLS-Praise-Winsten')) stop(paste('Invalid method selected: ',method))
@@ -63,9 +64,8 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7)
 				
 				pred = X %*% beta_hat
 				resid = Y - pred
-				
 				resid_by_brand = dcast(data.frame(index, resid = matrix(resid)), date ~ brand, value.var = "resid")
-				rho_brand = apply(resid_by_brand[,-1], 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
+				rho_brand = apply(cbind(resid_by_brand[,-1]), 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
 						
 				yprime = matrix(unlist(mapply(praise_winsten, ysplit, as.list(rho_brand),SIMPLIFY=FALSE)),ncol=1)
 				xprime = do.call('rbind', mapply(function(x,rho) apply(x, 2, praise_winsten, rho=rho), xsplit, as.list(rho_brand), SIMPLIFY = FALSE, USE.NAMES=FALSE))
@@ -78,8 +78,8 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7)
 			resid_by_brand = dcast(data.frame(index, resid = matrix(resid)), 
 				date ~ brand, value.var = "resid")
 			
-			rhos = apply(resid_by_brand[,-1], 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
-				
+			rhos = apply(cbind(resid_by_brand[,-1]), 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
+			#print(rhos)
 			sigma <- empty_sigma
 			
 			for (.i in 1:ncol(sigma)) {
@@ -216,3 +216,5 @@ setMethod("coef", "itersur", function(object) {
 			return(object@coefficients)
 			
 			})
+# Wooldridge 2002; 8.36
+# Rule of thumb: whenever residausl: use X; otherwise X hat.
