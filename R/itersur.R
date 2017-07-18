@@ -21,8 +21,8 @@ require(compiler)
 	praise_winsten <- cmpfun(praise_winsten)
 
 # iterative SUR
-itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7) {
-
+itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7, to.file=F) {
+		
 		if (!method%in%c('FGLS', 'FGLS-Praise-Winsten')) stop(paste('Invalid method selected: ',method))
 		# verify correct data classes
 		if (!class(X)=='matrix'|!class(Y)=='matrix') stop('X and Y need to be matrices')
@@ -128,6 +128,17 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7)
 			# check convergence, based on criterium in Greene (2002), p. 566
 			delta = drop(t(beta_hat - beta_old) %*% inv_varcovar %*% (beta_hat - beta_old)) # the middle part belongs to the Hessian
 			cat('Iteration ', iter, ' (Convergence Criteria: ', delta, ').\n')
+			
+			if (to.file==T) {
+				outbetahat = data.frame(matrix(beta_hat,ncol=length(beta_hat)))
+				
+				colnames(outbetahat) <- colnames(xprime)
+				outbetahat$iteration=iter
+				outbetahat$delta=delta
+				appendfile = ifelse(iter==1, F, T)
+				write.table(outbetahat, 'iter_out.csv', append=appendfile, col.names = !appendfile, row.names=F)
+				}
+			
 			deltas = c(deltas, delta)
 			if (delta<reltol) break
 		}
