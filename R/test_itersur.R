@@ -9,7 +9,7 @@ melted_df$brand <- sapply(as.character(melted_df$variable), function(x) rev(strs
 melted_df$measure <- sapply(as.character(melted_df$variable), function(x) paste0(rev(rev(strsplit(x, '_', fixed=T)[[1]])[-1]),collapse='_'))
 melted_df$value <- as.numeric(melted_df$value)
 
-df_converted = dcast(melted_df, brand + week ~ variable, measure = 'value', fill = 0)
+df_converted = dcast(melted_df, brand + week ~ measure, measure = 'value', fill = 0)
 
 
 # add brand fixed effects
@@ -32,12 +32,3 @@ y <- as.matrix(as.numeric(y_tmp$value))
 m <- itersur(X=X, Y=y, index=index)
 
 
-
-
-
-
-
-
-?itersur
-
-class(melted_df$variable)
