@@ -1,7 +1,7 @@
 library(marketingtools)
 library(dplyr)
 
-df <- read.csv('../data/test_data_perfect.csv')
+df <- read.csv('data/test_data_perfect.csv')
 
 # melt data
 melted_df <- melt(df, id.vars=c('week','quarter'))
@@ -16,7 +16,7 @@ df_converted = dcast(melted_df, brand + week ~ measure, measure = 'value', fill 
 for (i in unique(df_converted$brand)) eval(parse(text=paste0('df_converted$dummy_', i,' <- ifelse(df_converted$brand=="', i,'", 1,0)')))
 
 
-index = test[, c('week','brand')]
+index = df_converted[, c('week','brand')]
 
 
 X = as.matrix(df_converted[,grep('price|dummy', colnames(df_converted), value=T)])

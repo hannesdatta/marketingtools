@@ -75,8 +75,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 			pred = xprime %*% beta_hat
 			resid = yprime - pred
 			
-			resid_by_brand = dcast(data.frame(index, resid = matrix(resid)), 
-				date ~ brand, value.var = "resid")
+			resid_by_brand = dcast(data.frame(index, resid = matrix(resid)), date ~ brand, value.var = "resid")
 			
 			rhos = apply(cbind(resid_by_brand[,-1]), 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
 			#print(rhos)
@@ -84,17 +83,16 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 			
 			for (.i in 1:ncol(sigma)) {
 				for (.j in 1:ncol(sigma)) {
-					resids = cbind(resid_by_brand[, .i + 1], resid_by_brand[, 
-						.j + 1])
+					resids = cbind(resid_by_brand[, .i + 1], resid_by_brand[, .j + 1])
 					compl.cases = complete.cases(resids)
+					# if-statement below is true if no overlapping time periods
 					if (length(which(compl.cases == TRUE)) <= 1) {
 						sigma[.i, .j] <- 0
 					}
 					else {
 						tmax = nrow(resids)
 						resids = resids[complete.cases(resids), ]
-						sigma[.i, .j] <- (1/tmax) * sum(resids[, 1] * 
-						  resids[, 2])
+						sigma[.i, .j] <- (1/tmax) * sum(resids[, 1] * resids[, 2])
 					}
 				}
 			}
@@ -159,8 +157,8 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 	res@llik = -.5 * N * log(sum(resid^2)/N)
 	res@aic = 2*k - 2*res@llik
 	
-    res@predicted = as.numeric(pred)  # check with harald reg. computatoin of X, Y, etc.
-    res@resid = as.numeric(resid)  # check with harald reg. computatoin of X, Y, etc.
+    res@predicted = as.numeric(pred)  # check with harald reg. computation of X, Y, etc.
+    res@resid = as.numeric(resid)  # check with harald reg. computation of X, Y, etc.
 	res@varcovar = as.matrix(varcovar)
     res@X <- as.matrix(xprime)
     res@y <- as.numeric(yprime)
@@ -173,7 +171,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 	if(method=='FGLS-Praise-Winsten') res@rho_hat = rho_brand else res@rho_hat = rep(0, length(obsperbrand))
     return(res)
 	
-	# check with harald reg. computatoin of X, Y, etc.
+	# check with harald reg. computation of X, Y, etc.
 	}
 
 
@@ -228,4 +226,4 @@ setMethod("coef", "itersur", function(object) {
 			
 			})
 # Wooldridge 2002; 8.36
-# Rule of thumb: whenever residausl: use X; otherwise X hat.
+# Rule of thumb: whenever residuals: use X; otherwise X hat.
