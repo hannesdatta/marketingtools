@@ -4,8 +4,7 @@
 library(Matrix)
 library(MASS)
 require(compiler)
-require(reshape2)
-		
+
 # transformation function for praise-winston auto-correlation correction
 	praise_winsten <- function(x,rho) {
 		res=double(length(x))
@@ -65,7 +64,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 				
 				pred = X %*% beta_hat
 				resid = Y - pred
-				resid_by_brand = reshape2::dcast(data.frame(index, resid = matrix(resid)), date ~ brand, value.var = "resid")
+				resid_by_brand = pivot_wider(data.frame(index, resid = matrix(resid)), names_from = "brand", values_from = "resid")
 				rho_brand = apply(cbind(resid_by_brand[,-1]), 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
 						
 				yprime = matrix(unlist(mapply(praise_winsten, ysplit, as.list(rho_brand),SIMPLIFY=FALSE)),ncol=1)
@@ -76,7 +75,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 			pred = xprime %*% beta_hat
 			resid = yprime - pred
 			
-			resid_by_brand = reshape2::dcast(data.frame(index, resid = matrix(resid)), date ~ brand, value.var = "resid")
+			resid_by_brand = pivot_wider(data.frame(index, resid = matrix(resid)), names_from = "brand", values_from = "resid")
 			
 			rhos = apply(cbind(resid_by_brand[,-1]), 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
 			#print(rhos)
