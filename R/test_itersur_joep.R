@@ -1,6 +1,12 @@
+#install.packages("devtools")
+devtools::install_github("hannesdatta/marketingtools", force = TRUE)
+
+
 library(data.table)
-#library(marketingtools)
-library(systemfit)
+library(marketingtools)
+#library(systemfit)
+
+
 
 DT <- fread("data/test_data_long.csv")
 
@@ -37,7 +43,7 @@ y <- as.matrix(DT_input_SUR[, volume_sales_log])
 X <- as.matrix(DT_input_SUR[, .SD, .SDcols = grep("brand_|actual_price_log_|price_index_log_|FO_|DO_|FD_", names(DT_input_SUR))]) #|FO_|DO_|FD_
 
 # estimate SUR
-m <- itersur(X=X, Y=y, index=index, method="FGLS-Praise-Winsten") #method="FGLS-Praise-Winsten"
+m <- itersur(X=X, Y=y, index=index) #method="FGLS-Praise-Winsten"
 
 # results
 m
@@ -52,7 +58,6 @@ m
 #system <- list(EqA = EqA, EqB = EqB, EqC = EqC, EqP = EqP)
 #SUR_systemfit <- systemfit(system, data = DT_wide, method = "SUR", maxiter = 500)
 #summary(SUR_systemfit)
-
 
 
 
