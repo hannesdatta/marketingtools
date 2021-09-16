@@ -4,6 +4,7 @@
 library(Matrix)
 library(MASS)
 require(compiler)
+require(tidyr)
 
 # transformation function for praise-winston auto-correlation correction
 	praise_winsten <- function(x,rho) {
