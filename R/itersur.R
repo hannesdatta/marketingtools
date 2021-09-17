@@ -1,6 +1,7 @@
 # Credits: see https://cran.r-project.org/web/packages/Matrix/vignettes/Comparisons.pdf, for explanation
 # on how to calculate OLS estimator in a fast way.
 library(Matrix)
+library(tidyr)
 
 # transformation function for praise-winston auto-correlation correction
 	praise_winsten <- function(x,rho) {
@@ -72,7 +73,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 		X=as(X, "dgeMatrix")
 		# initialize starting values for iterative SUR
 			#beta_ols = solve(t(X) %*% X) %*% t(X) %*% Y
-			beta_ols = solve(crossprod(X), crossprod(X, Y))
+			beta_ols = Matrix:::solve(Matrix:::crossprod(X), Matrix:::crossprod(X, Y))
 			beta_hat = beta_ols
 
 		# get maximum observations by brand, used for Kronecker computations
@@ -102,7 +103,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 
 				pred = X %*% beta_hat
 				resid = Y - pred
-				resid_by_brand = pivot_wider(data.frame(index, resid = matrix(resid)), names_from = "brand", values_from = "resid")
+				resid_by_brand = tidyr:::pivot_wider(data.frame(index, resid = matrix(resid)), names_from = "brand", values_from = "resid")
 				rho_brand = apply(cbind(resid_by_brand[,-1]), 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
 
 				yprime = matrix(unlist(mapply(praise_winsten, ysplit, as.list(rho_brand),SIMPLIFY=FALSE)),ncol=1)
@@ -113,7 +114,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 			pred = xprime %*% beta_hat
 			resid = yprime - pred
 
-			resid_by_brand = pivot_wider(data.frame(index, resid = matrix(resid)), names_from = "brand", values_from = "resid")
+			resid_by_brand = tidyr:::pivot_wider(data.frame(index, resid = matrix(resid)), names_from = "brand", values_from = "resid")
 
 			rhos = apply(cbind(resid_by_brand[,-1]), 2, function(x) sum(x[-1]*x[-length(x)],na.rm=T)/sum(x^2,na.rm=T))
 			#print(rhos)
@@ -135,7 +136,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 				}
 			}
 
-			sigma_inv = solve(sigma)
+			sigma_inv = Matrix:::solve(sigma)
 			#sigma = (1/tobs) * crossprod(as.matrix(resid_by_brand[,-1]))
 
 			# old way to compute Kronecker, really slow
@@ -157,12 +158,13 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 			# new way to compute Kronecker of unequal observations, much faster
 			omega_inverse = kronecker(sigma_inv,I, make.dimnames = FALSE)[takeouts,takeouts]
 
-			inv_varcovar = crossprod(xprime, omega_inverse) %*% xprime
-			varcovar = solve(inv_varcovar)
-			beta_hat = varcovar %*% (crossprod(xprime, omega_inverse) %*% yprime)
+			inv_varcovar = Matrix:::crossprod(xprime, omega_inverse) %*% xprime
+			varcovar = Matrix:::solve(inv_varcovar)
+			beta_hat = varcovar %*% (Matrix:::crossprod(xprime, omega_inverse) %*% yprime)
 
 			# check convergence, based on criterium in Greene (2002), p. 566
-			delta = drop(t(beta_hat - beta_old) %*% inv_varcovar %*% (beta_hat - beta_old)) # the middle part belongs to the Hessian
+			delta = as.numeric(drop(Matrix::t(beta_hat - beta_old) %*% inv_varcovar %*% (beta_hat - beta_old))) # the middle part belongs to the Hessian
+
 			cat('Iteration ', iter, ' (Convergence Criteria: ', delta, ').\n')
 
 			if (to.file==T) {
@@ -183,7 +185,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 
 	pred = xprime %*% beta_hat
 	resid = yprime - pred
-	ses = sqrt(diag(varcovar))
+	ses = sqrt(diag(as.matrix(varcovar)))
 
 	res@coefficients = data.frame(variable = colnames(X), coef = drop(as.matrix(beta_hat)), se = drop(as.matrix(ses)), ols = drop(as.matrix(beta_ols)), row.names=NULL)
 	res@coefficients$z <- res@coefficients$coef/res@coefficients$se
