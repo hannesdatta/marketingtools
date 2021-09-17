@@ -1,7 +1,11 @@
 library(data.table)
-library(systemfit)
+require(systemfit)
+library(marketingtools)
 
-DT <- fread("data/test_data_long.csv")
+load("data/test_data_long.rda")
+
+DT <- data.table(test_data_long)
+DT[, brand:=as.character(brand)]
 
 # remove NA
 DT <- na.omit(DT)
@@ -35,8 +39,16 @@ index <- DT_input_SUR[, .(week, brand)]
 y <- as.matrix(DT_input_SUR[, volume_sales_log])
 X <- as.matrix(DT_input_SUR[, .SD, .SDcols = grep("brand_|actual_price_log_|price_index_log_|FO_|DO_|FD_", names(DT_input_SUR))]) #|FO_|DO_|FD_
 
+# remove variables from X without variation
+rem.cols <- which(apply(X, 2, sd)==0)
+if (length(rem.cols)>0) X <- X[, -rem.cols]
+
+
+
+
 # estimate SUR
-m <- itersur(X=X, Y=y, index=index, method="FGLS-Praise-Winsten") #method="FGLS-Praise-Winsten"
+m <- itersur(X=X, Y=y, index=index, method="FGLS") #method="FGLS-Praise-Winsten"
+m <- itersur(X=X, Y=y, index=index, method="FGLS-Praise-Winsten")
 
 # results
 m
