@@ -2,3 +2,5 @@
 .git$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^marketingtools\.Rproj$
+^LICENSE\.md$

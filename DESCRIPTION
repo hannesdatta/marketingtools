@@ -1,11 +1,19 @@
 Package: marketingtools
-Type: Package
-Title: Marketingtools: A first attempt for re-usable code
-Version: 0.0.1 
-Date: 2016-01-26
-Author: Hannes Datta
-Maintainer: Hannes Datta, Tilburg University <h.datta@tilburguniversity.nl>
-Description: A toolbox with frequently used code in the applied econometrics / marketing literature
-License: GPL (>= 2)
-Depends: data.table, reshape2, MASS, Matrix, fUnitRoots, compiler
-Imports: data.table, reshape2, MASS, Matrix, fUnitRoots, compiler
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Hannes",
+           family = "Datta",
+           role = c("aut", "cre"),
+           email = "h.datta@tilburguniversity.edu",
+           comment = c(ORCID = "0000-0002-8723-6002"))
+Description: A toolbox with frequently used code in applied econometrics/marketing.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Imports: 
+    data.table, MASS, Matrix, fUnitRoots, compiler, tidyr
+Depends: 
+    R (>= 2.10)
