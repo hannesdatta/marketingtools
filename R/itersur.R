@@ -64,7 +64,7 @@ itersur <- function (X, Y, index, method = "FGLS", maxiter = 1000, reltol=10^-7,
 
 		if (!method%in%c('FGLS', 'FGLS-Praise-Winsten')) stop(paste('Invalid method selected: ',method))
 		# verify correct data classes
-		if (!class(X)=='matrix'|!class(Y)=='matrix') stop('X and Y need to be matrices')
+		if (!class(X)%in%'matrix'|!class(Y)%in%'matrix') stop('X and Y need to be matrices')
 
 		# verify order of index
 		if (!all(order(index[,2], index[,1])==1:nrow(X))) stop('Data needs to be stacked by brands')
