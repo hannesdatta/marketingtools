@@ -1,5 +1,6 @@
 .gitignore
 .git$
-^marketingtools\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
+^marketingtools\.Rproj$
 ^LICENSE\.md$
